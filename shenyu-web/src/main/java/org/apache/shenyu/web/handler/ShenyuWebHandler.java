@@ -123,27 +123,30 @@ public final class ShenyuWebHandler implements WebHandler, ApplicationListener<P
         if (CollectionUtils.isEmpty(extPlugins)) {
             return;
         }
+        // 过滤出新增的插件
         final List<ShenyuPlugin> shenyuAddPlugins = extPlugins.stream()
                 .filter(e -> plugins.stream().noneMatch(plugin -> plugin.named().equals(e.named())))
                 .collect(Collectors.toList());
-
+        // 过滤出更新的插件，以名称和旧的相同来判断，则为更新
         final List<ShenyuPlugin> shenyuUpdatePlugins = extPlugins.stream()
                 .filter(e -> plugins.stream().anyMatch(plugin -> plugin.named().equals(e.named())))
                 .collect(Collectors.toList());
-
+        // 如果没有数据，则跳过
         if (CollectionUtils.isEmpty(shenyuAddPlugins) && CollectionUtils.isEmpty(shenyuUpdatePlugins)) {
             return;
         }
+        // 复制旧的数据
         // copy new list
         List<ShenyuPlugin> newPluginList = new ArrayList<>(plugins);
-        
+        // 添加新的插件数据
         // Add extend plugin from pluginData or shenyu ext-lib
         this.sourcePlugins.addAll(shenyuAddPlugins);
-
+        // 添加新数据
         if (CollectionUtils.isNotEmpty(shenyuAddPlugins)) {
             shenyuAddPlugins.forEach(plugin -> LOG.info("shenyu auto add extends plugins:{}", plugin.named()));
             newPluginList.addAll(shenyuAddPlugins);
         }
+        // 修改更新的数据
         if (CollectionUtils.isNotEmpty(shenyuUpdatePlugins)) {
             shenyuUpdatePlugins.forEach(plugin -> LOG.info("shenyu auto update extends plugins:{}", plugin.named()));
             for (ShenyuPlugin updatePlugin : shenyuUpdatePlugins) {
@@ -159,6 +162,7 @@ public final class ShenyuWebHandler implements WebHandler, ApplicationListener<P
                 }
             }
         }
+        // 重新排序
         plugins = sortPlugins(newPluginList);
     }
 

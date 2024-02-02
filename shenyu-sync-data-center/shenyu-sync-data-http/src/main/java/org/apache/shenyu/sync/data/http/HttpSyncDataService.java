@@ -134,6 +134,7 @@ public class HttpSyncDataService implements SyncDataService {
         for (ConfigGroupEnum groupKey : groups) {
             params.append("groupKeys").append("=").append(groupKey.name()).append("&");
         }
+        // 重新下载对应的分组的数据
         String url = server + Constants.SHENYU_ADMIN_PATH_CONFIGS_FETCH + "?" + StringUtils.removeEnd(params.toString(), "&");
         LOG.info("request configs: [{}]", url);
         String json;
@@ -179,6 +180,9 @@ public class HttpSyncDataService implements SyncDataService {
         return factory.executor(jsonObject.getAsJsonObject("data"));
     }
 
+    // 从本地内存获取上次已经获取的分组的信息，包括md5、更新时间，调用admin的configs/listener接口，确认
+    // 哪些分组是已经有变更过，返回有变更的分组列表
+    // 再次调用configs/fetch接口，将已经变更的分组数据作为参数传递
     private void doLongPolling(final String server) {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>(8);
         for (ConfigGroupEnum group : ConfigGroupEnum.values()) {
@@ -193,6 +197,7 @@ public class HttpSyncDataService implements SyncDataService {
                 .add(Constants.X_ACCESS_TOKEN, this.accessTokenManager.getAccessToken())
                 .add("Content-Type", "application/x-www-form-urlencoded")
                 .build();
+        // 获取哪些分组数据有变更，如果有变更则重新获取对应的数据
         String listenerUrl = server + Constants.SHENYU_ADMIN_PATH_CONFIGS_LISTENER;
         String uri = UriComponentsBuilder.fromHttpUrl(listenerUrl).queryParams(params).build(true).toUriString();
         Request request = new Request.Builder()
@@ -217,7 +222,7 @@ public class HttpSyncDataService implements SyncDataService {
             String message = String.format("listener configs fail, server:[%s], %s", server, e.getMessage());
             throw new ShenyuException(message, e);
         }
-        
+        // 如果groupJson不空，则说明距离上次获取，数据有变更，需要进行下载数据
         if (Objects.nonNull(groupJson) && !groupJson.isEmpty()) {
             // fetch group configuration async.
             ConfigGroupEnum[] changedGroups = GsonUtils.getGson().fromJson(groupJson, ConfigGroupEnum[].class);

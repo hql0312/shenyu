@@ -84,12 +84,16 @@ public final class ShenyuPluginClassLoader extends ClassLoader implements Closea
      */
     public List<ShenyuLoaderResult> loadUploadedJarPlugins() {
         List<ShenyuLoaderResult> results = new ArrayList<>();
+        // 所有的类映射关系
         Set<String> names = pluginJar.getClazzMap().keySet();
+        // 遍历所有的类
         names.forEach(className -> {
             Object instance;
             try {
+                // 尝试创建对象，如果可以，则加入到Spring容器中
                 instance = getOrCreateSpringBean(className);
                 if (Objects.nonNull(instance)) {
+                    // 构建ShenyuLoaderResult对象
                     results.add(buildResult(instance));
                     LOG.info("The class successfully loaded into a upload-Jar-plugin {} is registered as a spring bean", className);
                 }
@@ -147,29 +151,37 @@ public final class ShenyuPluginClassLoader extends ClassLoader implements Closea
     }
 
     private <T> T getOrCreateSpringBean(final String className) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        // 确认是否已经注册过了，如果有则不处理，直接返回
         if (SpringBeanUtils.getInstance().existBean(className)) {
             return SpringBeanUtils.getInstance().getBeanByClassName(className);
         }
         lock.lock();
         try {
+            // Double check,
             T inst = SpringBeanUtils.getInstance().getBeanByClassName(className);
             if (Objects.isNull(inst)) {
+                // 使用 ShenyuPluginClassLoader 进行加载类
                 Class<?> clazz = Class.forName(className, false, this);
                 //Exclude ShenyuPlugin subclass and PluginDataHandler subclass
                 // without adding @Component @Service annotation
+                // 确认是否是 ShenyuPlugin 或是 PluginDataHandler的子类
                 boolean next = ShenyuPlugin.class.isAssignableFrom(clazz)
                         || PluginDataHandler.class.isAssignableFrom(clazz);
                 if (!next) {
+                    // 如果不是，确认是否标识了 @Component 与 @Service 注解
                     Annotation[] annotations = clazz.getAnnotations();
                     next = Arrays.stream(annotations).anyMatch(e -> e.annotationType().equals(Component.class)
                             || e.annotationType().equals(Service.class));
                 }
                 if (next) {
+                    // 如果符合以上内容，则注册Bean
                     GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
                     beanDefinition.setBeanClassName(className);
                     beanDefinition.setAutowireCandidate(true);
                     beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
+                    // 注册bean
                     String beanName = SpringBeanUtils.getInstance().registerBean(beanDefinition, this);
+                    // 创建对象
                     inst = SpringBeanUtils.getInstance().getBeanByClassName(beanName);
                 }
             }
@@ -181,8 +193,10 @@ public final class ShenyuPluginClassLoader extends ClassLoader implements Closea
 
     private ShenyuLoaderResult buildResult(final Object instance) {
         ShenyuLoaderResult result = new ShenyuLoaderResult();
+        // 创建的对象是否实现了ShenyuPlugin
         if (instance instanceof ShenyuPlugin) {
             result.setShenyuPlugin((ShenyuPlugin) instance);
+            // 创建的对象是否实现了PluginDataHandler
         } else if (instance instanceof PluginDataHandler) {
             result.setPluginDataHandler((PluginDataHandler) instance);
         }

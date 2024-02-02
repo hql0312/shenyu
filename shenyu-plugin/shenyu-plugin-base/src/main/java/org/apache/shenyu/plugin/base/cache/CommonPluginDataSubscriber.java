@@ -101,8 +101,10 @@ public class CommonPluginDataSubscriber implements PluginDataSubscriber {
         if (CollectionUtils.isEmpty(handlers)) {
             return;
         }
+        // 遍历所有数据
         for (PluginDataHandler handler : handlers) {
             String pluginNamed = handler.pluginNamed();
+            // 更新现有的PluginDataHandler列表
             MapUtils.computeIfAbsent(handlerMap, pluginNamed, name -> {
                 LOG.info("shenyu auto add extends plugin data handler name is :{}", pluginNamed);
                 return handler;
