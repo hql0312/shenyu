@@ -44,7 +44,7 @@ public class ApolloClient {
 
     public ApolloClient(final ApolloProperties apolloConfig) {
         this.apolloConfig = apolloConfig;
-
+        // 构建apollo的开放接口调用信息
         this.apolloOpenApiClient = ApolloOpenApiClient
                 .newBuilder()
                 .withPortalUrl(apolloConfig.getPortalUrl())

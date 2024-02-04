@@ -92,14 +92,18 @@ public class SyncDataServiceImpl implements SyncDataService {
 
     @Override
     public boolean syncAll(final DataEventTypeEnum type) {
+        // 同步auth数据
         appAuthService.syncData();
-
+        // 同步插件数据
         List<PluginData> pluginDataList = pluginService.listAll();
+        // 通过spring发布/订阅机制进行通知订阅者(发布DataChangedEvent)
+        // 统一由DataChangedEventDispatcher进行监听
+        // DataChangedEvent带上了配置分组类型、当前操作类型、数据
         eventPublisher.publishEvent(new DataChangedEvent(ConfigGroupEnum.PLUGIN, type, pluginDataList));
-
+        // 同步选择器
         List<SelectorData> selectorDataList = selectorService.listAll();
         eventPublisher.publishEvent(new DataChangedEvent(ConfigGroupEnum.SELECTOR, type, selectorDataList));
-
+        // 同步规则
         List<RuleData> ruleDataList = ruleService.listAll();
         eventPublisher.publishEvent(new DataChangedEvent(ConfigGroupEnum.RULE, type, ruleDataList));
 

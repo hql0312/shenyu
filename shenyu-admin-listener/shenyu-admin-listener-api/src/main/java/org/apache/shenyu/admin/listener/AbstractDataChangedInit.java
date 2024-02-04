@@ -35,6 +35,7 @@ public abstract class AbstractDataChangedInit implements DataChangedInit {
 
     @Override
     public void run(final String... args) throws Exception {
+        // 不存在节点，是进行创建
         if (notExist()) {
             syncDataService.syncAll(DataEventTypeEnum.REFRESH);
         }

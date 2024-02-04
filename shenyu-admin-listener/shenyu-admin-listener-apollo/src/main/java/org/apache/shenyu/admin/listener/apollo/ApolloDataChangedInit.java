@@ -24,6 +24,9 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
+ * 该类实现了 DataChangedInit 和 CommandLineRunner 接口
+ * CommandLineRunner 会在启动后，被SpringBoot进行调用一次
+ * 目的是为了进行初始化
  * the type apollo data change init.
  *
  * @since 2.6.0
@@ -46,6 +49,8 @@ public class ApolloDataChangedInit extends AbstractDataChangedInit {
      */
     @Override
     protected boolean notExist() {
+        // 判断 plugin、auth、meta、proxy.selector等节点是否存在
+        // 只要有一个不存在，则进入重新加载(这些节点不会创建，为什么要判断一次呢？)
         return Stream.of(ApolloPathConstants.PLUGIN_DATA_ID, ApolloPathConstants.AUTH_DATA_ID, ApolloPathConstants.META_DATA_ID, ApolloPathConstants.PROXY_SELECTOR_DATA_ID).allMatch(
             this::dataIdNotExist);
     }

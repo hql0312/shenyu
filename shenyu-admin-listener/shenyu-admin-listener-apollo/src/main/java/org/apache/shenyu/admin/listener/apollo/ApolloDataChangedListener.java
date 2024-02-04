@@ -34,6 +34,7 @@ public class ApolloDataChangedListener extends AbstractNodeDataChangedListener {
      * @param apolloClient the apollo client
      */
     public ApolloDataChangedListener(final ApolloClient apolloClient) {
+        // 配置几类分组数据的前缀
         super(new ChangeData(ApolloPathConstants.PLUGIN_DATA_ID,
                 ApolloPathConstants.SELECTOR_DATA_ID,
                 ApolloPathConstants.RULE_DATA_ID,

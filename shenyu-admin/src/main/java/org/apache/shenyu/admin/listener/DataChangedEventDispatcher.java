@@ -53,11 +53,13 @@ public class DataChangedEventDispatcher implements ApplicationListener<DataChang
     @SuppressWarnings("unchecked")
     public void onApplicationEvent(final DataChangedEvent event) {
         for (DataChangedListener listener : listeners) {
+            // 依据不同的分组类型进行转发
             switch (event.getGroupKey()) {
                 case APP_AUTH:
                     listener.onAppAuthChanged((List<AppAuthData>) event.getSource(), event.getEventType());
                     break;
                 case PLUGIN:
+                    // 调用注册的listener对象
                     listener.onPluginChanged((List<PluginData>) event.getSource(), event.getEventType());
                     break;
                 case RULE:

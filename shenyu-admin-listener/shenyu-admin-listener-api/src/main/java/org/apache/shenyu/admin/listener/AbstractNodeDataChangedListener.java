@@ -68,6 +68,7 @@ public abstract class AbstractNodeDataChangedListener implements DataChangedList
 
     @Override
     public void onPluginChanged(final List<PluginData> changed, final DataEventTypeEnum eventType) {
+        // 配置前缀为plugin.
         final String configKeyPrefix = changeData.getPluginDataId() + DefaultNodeConstants.JOIN_POINT;
         this.onCommonChanged(configKeyPrefix, changed, eventType, PluginData::getName, PluginData.class);
         LOG.debug("[DataChangedListener] PluginChanged {}", configKeyPrefix);
@@ -102,32 +103,45 @@ public abstract class AbstractNodeDataChangedListener implements DataChangedList
         final ReentrantLock reentrantLock = listSaveLockMap.computeIfAbsent(configKeyPrefix, key -> new ReentrantLock());
         try {
             reentrantLock.lock();
+            // 当前传入的插件列表
             final List<String> changeNames = changedList.stream().map(mapperToKey).collect(Collectors.toList());
             switch (eventType) {
+                // 删除操作
                 case DELETE:
+                    // 按 plugin.${pluginName} 进行删除
                     changedList.stream().map(mapperToKey).forEach(removeKey -> {
                         delConfig(configKeyPrefix + removeKey);
                     });
+                    // 从plugin.list中移除对应的插件名称
+                    // plugin.list 记录下了目前启用的列表
                     delChangedData(configKeyPrefix, changeNames);
                     break;
                 case REFRESH:
                 case MYSELF:
+                    // 重载逻辑
+                    // 获取plugin.list中的所有插件列表
                     final List<String> configDataNames = this.getConfigDataNames(configKeyPrefix);
+                    // 依次更新当前调整的每个插件
                     changedList.forEach(changedData -> {
+                        // 发布配置
                         publishConfig(configKeyPrefix + mapperToKey.apply(changedData), changedData);
                     });
-
+                    // 目前存储的列表中，如果数据比当前传入的多，则删除多余的数据
                     if (configDataNames != null && configDataNames.size() > changedList.size()) {
+                        // 踢除当前加载的数据
                         configDataNames.removeAll(changeNames);
+                        // 逐个删除已经取消的数据
                         configDataNames.forEach(this::delConfig);
                     }
-
+                    // 重新更新列表数据
                     publishConfig(configKeyPrefix + DefaultNodeConstants.LIST_STR, changeNames);
                     break;
                 default:
+                    // 新增或是更新
                     changedList.forEach(changedData -> {
                         publishConfig(configKeyPrefix + mapperToKey.apply(changedData), changedData);
                     });
+                    // 将新加的插件更新
                     putChangeData(configKeyPrefix, changeNames);
                     break;
             }
