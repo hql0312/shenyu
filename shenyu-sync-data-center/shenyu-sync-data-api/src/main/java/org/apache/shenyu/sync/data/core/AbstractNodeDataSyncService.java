@@ -45,6 +45,7 @@ import java.util.function.Consumer;
 /**
  * AbstractPathDataSyncService.
  * Abstract method to monitor child node changes.
+ * 节点类的基类
  */
 public abstract class AbstractNodeDataSyncService {
 
@@ -68,21 +69,30 @@ public abstract class AbstractNodeDataSyncService {
                                        final List<AuthDataSubscriber> authDataSubscribers,
                                        final List<ProxySelectorDataSubscriber> proxySelectorDataSubscribers,
                                        final List<DiscoveryUpstreamDataSubscriber> discoveryUpstreamDataSubscribers) {
+        // 监听的变更的数据的key
         this.changeData = changeData;
+        // pluginData订阅器
         this.pluginDataSubscriber = pluginDataSubscriber;
+        // 元数据订阅器
         this.metaDataSubscribers = metaDataSubscribers;
+        // 授权数据订阅器
         this.authDataSubscribers = authDataSubscribers;
+        // selector订阅器
         this.proxySelectorDataSubscribers = proxySelectorDataSubscribers;
+        // 注册发现的下游数据订阅器
         this.discoveryUpstreamDataSubscribers = discoveryUpstreamDataSubscribers;
     }
 
+    // 开始监听
     protected void startWatch() {
         try {
+            // 获取所有的插件列表并监听,在Apollo中主要是获取数据，不会回调
             final List<String> pluginNames = getConfigListOnWatch(changeData.getPluginDataId() + DefaultNodeConstants.POINT_LIST, updateData -> {
                 List<String> changedPluginNames = GsonUtils.getInstance().fromList(updateData, String.class);
                 watcherPlugin(changedPluginNames);
             });
 
+            // 监听列表的变更
             watcherPlugin(pluginNames);
 
             watchCommonList(changeData.getAuthDataId() + DefaultNodeConstants.JOIN_POINT, this::cacheAuthData, this::unCacheAuthData);
@@ -112,19 +122,37 @@ public abstract class AbstractNodeDataSyncService {
 
     protected abstract void doRemoveListener(String removeKey);
 
+    /**
+     * 配置中心的key分为以下几个：
+     * plugin.list 插件列表
+     * plugin.${pluginname} 单个插件的详细信息
+     * selector.${pluginname}.list 单个插件的selector列表
+     * selector.${pluginname}.${selectorId} 单个selector 详细信息
+     * rule.${pluginname}.${selectorId}.list  单个selector的rule列表
+     * rule.${pluginname}.${selectorId}.${ruleId} 单个rule的详细信息
+     *
+     * @param pluginNames
+     */
     private void watcherPlugin(final List<String> pluginNames) {
         if (ObjectUtils.isEmpty(pluginNames)) {
             return;
         }
+        // 在配置中心以 plugin.${pluginname} 进行创建key
+        // 逐个遍历所有的插件
         pluginNames.forEach(pluginName -> {
+            // 获取插件数据
             final String pluginData = this.getConfigOnWatch(changeData.getPluginDataId() + DefaultNodeConstants.JOIN_POINT + pluginName, this::cachePluginData, this::unCachePluginData);
+            // 将数据更新到本地缓存
             cachePluginData(pluginData);
-
+            // 获取对应的插件下的所有selector数据
+            // selector 对应的key 为 selector.${pluginname}.list，该数据为插件对应的selectorId列表
+            // 以下的会处理 selector.${pluginname}.${selectorId} 为selector 详细信息
             final List<String> selectorIds = getConfigListOnWatch(changeData.getSelectorDataId() + DefaultNodeConstants.JOIN_POINT + pluginName + DefaultNodeConstants.POINT_LIST, updateData -> {
                 List<String> changedSelectorIds = GsonUtils.getInstance().fromList(updateData, String.class);
                 watcherSelector(pluginName, changedSelectorIds);
             });
-
+            // 处理selector数据并更新本地缓存
+            // 同时处理rule信息
             watcherSelector(pluginName, selectorIds);
 
             watchCommonList(NacosPathConstants.PROXY_SELECTOR_DATA_ID + DefaultNodeConstants.JOIN_POINT + pluginName + DefaultNodeConstants.JOIN_POINT,
@@ -137,11 +165,12 @@ public abstract class AbstractNodeDataSyncService {
     /**
      * watchCommonList.
      * examples data:
-     *  meta.list
-     *   -> meta.id
-     *   -> meta.id
-     *   -> meta.id
-     * @param keyPrefix keyPrefix
+     * meta.list
+     * -> meta.id
+     * -> meta.id
+     * -> meta.id
+     *
+     * @param keyPrefix     keyPrefix
      * @param updateHandler updateHandler
      * @param deleteHandler deleteHandler
      */
@@ -171,18 +200,19 @@ public abstract class AbstractNodeDataSyncService {
             return;
         }
         selectorIds.forEach(selectorId -> {
+            // selector.${pluginname}.${selectorId}
             final String selectorData = this.getConfigOnWatch(changeData.getSelectorDataId()
                             + DefaultNodeConstants.JOIN_POINT + pluginName + DefaultNodeConstants.JOIN_POINT + selectorId,
                     this::cacheSelectorData, this::unCacheSelectorData);
-
+            // 将数据更新到本地缓存
             cacheSelectorData(selectorData);
-
+            // 获取对应的rule数据列表，key为 rule.${pluginname}.${selectorId}.list
             final List<String> ruleIds = getConfigListOnWatch(changeData.getRuleDataId() + DefaultNodeConstants.JOIN_POINT
                             + pluginName + DefaultNodeConstants.JOIN_POINT + selectorId + DefaultNodeConstants.POINT_LIST,
-                updateData -> {
-                    List<String> upSelectorIds = GsonUtils.getInstance().fromList(updateData, String.class);
-                    watcherRule(selectorId, upSelectorIds, pluginName);
-                });
+                    updateData -> {
+                        List<String> upSelectorIds = GsonUtils.getInstance().fromList(updateData, String.class);
+                        watcherRule(selectorId, upSelectorIds, pluginName);
+                    });
 
             watcherRule(selectorId, ruleIds, pluginName);
         });
@@ -196,6 +226,7 @@ public abstract class AbstractNodeDataSyncService {
             final String ruleDataStr = this.getConfigOnWatch(changeData.getRuleDataId() + DefaultNodeConstants.JOIN_POINT + pluginName
                             + DefaultNodeConstants.JOIN_POINT + selectorId + DefaultNodeConstants.JOIN_POINT + ruleId,
                     this::cacheRuleData, this::unCacheRuleData);
+            // 更新本地缓存
             cacheRuleData(ruleDataStr);
         });
     }

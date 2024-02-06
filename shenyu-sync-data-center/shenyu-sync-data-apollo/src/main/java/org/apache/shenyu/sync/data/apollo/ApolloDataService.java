@@ -49,10 +49,10 @@ public class ApolloDataService extends AbstractNodeDataSyncService implements Sy
     /**
      * Instantiates a new Nacos sync data service.
      *
-     * @param configService         the config service
+     * @param configService        the config service
      * @param pluginDataSubscriber the plugin data subscriber
-     * @param metaDataSubscribers   the meta data subscribers
-     * @param authDataSubscribers   the auth data subscribers
+     * @param metaDataSubscribers  the meta data subscribers
+     * @param authDataSubscribers  the auth data subscribers
      */
     public ApolloDataService(final Config configService, final PluginDataSubscriber pluginDataSubscriber,
                              final List<MetaDataSubscriber> metaDataSubscribers,
@@ -60,19 +60,24 @@ public class ApolloDataService extends AbstractNodeDataSyncService implements Sy
                              final List<ProxySelectorDataSubscriber> proxySelectorDataSubscribers,
                              final List<DiscoveryUpstreamDataSubscriber> discoveryUpstreamDataSubscribers) {
         super(new ChangeData(ApolloPathConstants.PLUGIN_DATA_ID,
-                ApolloPathConstants.SELECTOR_DATA_ID,
-                ApolloPathConstants.RULE_DATA_ID,
-                ApolloPathConstants.AUTH_DATA_ID,
-                ApolloPathConstants.META_DATA_ID,
-                ApolloPathConstants.PROXY_SELECTOR_DATA_ID,
-                ApolloPathConstants.DISCOVERY_DATA_ID),
+                        ApolloPathConstants.SELECTOR_DATA_ID,
+                        ApolloPathConstants.RULE_DATA_ID,
+                        ApolloPathConstants.AUTH_DATA_ID,
+                        ApolloPathConstants.META_DATA_ID,
+                        ApolloPathConstants.PROXY_SELECTOR_DATA_ID,
+                        ApolloPathConstants.DISCOVERY_DATA_ID),
                 pluginDataSubscriber, metaDataSubscribers, authDataSubscribers, proxySelectorDataSubscribers, discoveryUpstreamDataSubscribers);
         this.configService = configService;
-
+        // 主要逻辑是更新apollo配置中心的数据到本地缓存
         startWatch();
+        // 监听逻辑
         apolloWatchPrefixes();
     }
 
+    /**
+     * 1. 不监听结尾是list的key的数据
+     * 2. 分别处理plugin\selector\rule\auth\meta\proxy.selector\discovery的变更数据
+     */
     private void apolloWatchPrefixes() {
         final ConfigChangeListener listener = changeEvent -> {
             changeEvent.changedKeys().forEach(changeKey -> {
