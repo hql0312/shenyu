@@ -228,12 +228,17 @@ public class PluginServiceImpl implements PluginService {
      * @see PluginCreatedEvent
      */
     private String create(final PluginDTO pluginDTO) {
+        // 判断有没有对应的插件
         Assert.isNull(pluginMapper.nameExisted(pluginDTO.getName()), AdminConstants.PLUGIN_NAME_IS_EXIST);
+        // 自定义的插件jar
         if (!Objects.isNull(pluginDTO.getFile())) {
             Assert.isTrue(checkFile(Base64.decode(pluginDTO.getFile())), AdminConstants.THE_PLUGIN_JAR_FILE_IS_NOT_CORRECT_OR_EXCEEDS_16_MB);
         }
+        // 创建plugin对象
         PluginDO pluginDO = PluginDO.buildPluginDO(pluginDTO);
+        // 插入对象到数据库
         if (pluginMapper.insertSelective(pluginDO) > 0) {
+            // 插件新增成功，则发布创建事件
             // publish create event. init plugin data
             pluginEventPublisher.onCreated(pluginDO);
         }

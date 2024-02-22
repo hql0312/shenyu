@@ -52,29 +52,30 @@ public class DataChangedEventDispatcher implements ApplicationListener<DataChang
     @Override
     @SuppressWarnings("unchecked")
     public void onApplicationEvent(final DataChangedEvent event) {
+        // 遍历数据变更监听器（这里只会注册ApolloDataChangedListener）
         for (DataChangedListener listener : listeners) {
             // 依据不同的分组类型进行转发
             switch (event.getGroupKey()) {
-                case APP_AUTH:
+                case APP_AUTH: // 认证信息
                     listener.onAppAuthChanged((List<AppAuthData>) event.getSource(), event.getEventType());
                     break;
-                case PLUGIN:
+                case PLUGIN: // 插件事件
                     // 调用注册的listener对象
                     listener.onPluginChanged((List<PluginData>) event.getSource(), event.getEventType());
                     break;
-                case RULE:
+                case RULE: // 规则事件
                     listener.onRuleChanged((List<RuleData>) event.getSource(), event.getEventType());
                     break;
-                case SELECTOR:
+                case SELECTOR: // 选择器事件
                     listener.onSelectorChanged((List<SelectorData>) event.getSource(), event.getEventType());
                     break;
-                case META_DATA:
+                case META_DATA: // 元数据事件
                     listener.onMetaDataChanged((List<MetaData>) event.getSource(), event.getEventType());
                     break;
-                case PROXY_SELECTOR:
+                case PROXY_SELECTOR: // 代理选择器事件
                     listener.onProxySelectorChanged((List<ProxySelectorData>) event.getSource(), event.getEventType());
                     break;
-                case DISCOVER_UPSTREAM:
+                case DISCOVER_UPSTREAM: // 注册发现下游列表事件
                     listener.onDiscoveryUpstreamChanged((List<DiscoverySyncData>) event.getSource(), event.getEventType());
                     applicationContext.getBean(LoadServiceDocEntry.class).loadDocOnUpstreamChanged((List<DiscoverySyncData>) event.getSource(), event.getEventType());
                     break;

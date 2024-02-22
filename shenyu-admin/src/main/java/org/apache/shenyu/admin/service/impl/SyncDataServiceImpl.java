@@ -106,8 +106,9 @@ public class SyncDataServiceImpl implements SyncDataService {
         // 同步规则
         List<RuleData> ruleDataList = ruleService.listAll();
         eventPublisher.publishEvent(new DataChangedEvent(ConfigGroupEnum.RULE, type, ruleDataList));
-
+        //元数据
         metaDataService.syncData();
+        // 下游列表
         discoveryService.syncData();
         return true;
     }

@@ -56,8 +56,10 @@ public class PluginEventPublisher implements AdminDataModelChangedEventPublisher
      */
     @Override
     public void onCreated(final PluginDO plugin) {
+        // 发布DataChangeEvent事件：事件分组(插件、选择器、规则)、事件类型(创建、删除、更新)、变更的数据
         publisher.publishEvent(new DataChangedEvent(ConfigGroupEnum.PLUGIN, DataEventTypeEnum.CREATE,
                 Collections.singletonList(PluginTransfer.INSTANCE.mapToData(plugin))));
+        // 发布PluginCreatedEvent
         publish(new PluginCreatedEvent(plugin, SessionUtil.visitorName()));
     }
     

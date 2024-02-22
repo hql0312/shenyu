@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 /**
  * AbstractNodeDataChangedListener.
  */
+// 实现接口
 public abstract class AbstractNodeDataChangedListener implements DataChangedListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractNodeDataChangedListener.class);
